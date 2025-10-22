@@ -1,0 +1,86 @@
+# Central configuration for the AI assistant ("Codex") and project tooling.
+
+[project]
+name        = "sdl2-tictactoe"
+version     = "0.1.0"
+description = "C++/SDL2 Tic‑Tac‑Toe with local & network multiplayer"
+authors     = ["SAIDI Amine <amine.saidi.ing@gmail.com>"]
+license     = "MIT"
+
+[repo]
+# Standardized folders for scripts and CI
+src_dir      = "src"
+include_dir  = "include"
+tests_dir    = "tests"
+assets_dir   = "assets"
+build_dir    = "build"
+cmake_min    = "3.22"
+cpp_standard = "c++20"
+
+[build]
+# Values your scripts (make, cmake presets, tasks.json) can read
+profile            = "Debug"            # Debug | Release
+warnings_as_errors = true
+sanitizers         = { address = true, undefined = true, thread = false }
+
+[dependencies]
+# Declarative: consumed by Conan/vcpkg OR by Find*.cmake
+sdl2   = { version = ">=2.26" }
+fmt    = { version = ">=10", optional = true }
+spdlog = { version = ">=1.12", optional = true }
+
+[network]
+enabled            = true
+protocol           = "tcp"
+port               = 42424
+connect_timeout_ms = 5000
+recv_timeout_ms    = 5000
+heartbeat_ms       = 1000
+
+[ui]
+window = { width = 800, height = 600, title = "SDL2 Tic‑Tac‑Toe" }
+vsync  = true
+
+[testing]
+# Consumed by test/CI scripts
+framework    = "gtest"
+coverage_min = 0.70
+
+[git]
+branch_conventions = ["feat/*", "fix/*", "refactor/*", "docs/*", "build/*", "test/*", "ci/*"]
+commit_prefixes    = ["feat", "fix", "refactor", "docs", "build", "test", "ci"]
+co_authored_ai     = true
+
+[codex]
+# AI agent section
+enabled            = true
+rubric_strictness  = "standard"        # relaxed | standard | strict
+max_file_patch_kb  = 64
+max_context_notes  = 12
+allow_shell        = false             # safety: do not auto-run shell commands
+allow_file_writes  = false
+
+[codex.roles]
+# Prompt shortcuts referenced by AGENTS.md
+architect   = "Act as a C++/SDL2 software architect. Output: file tree, APIs, risks."
+implementer = "Act as a senior C++ implementer using C++20, RAII, small patches + tests."
+reviewer    = "Act as a strict code reviewer. Annotate issues and propose fix-patches."
+builder     = "Act as a cross-platform CMake maintainer (>=3.22) for Win/Linux/macOS."
+tester      = "Act as a C++ test engineer. Write gtest, coverage, and CI steps."
+docwriter   = "Act as a technical writer. Keep README/HOWTO accurate and concise."
+refactorer  = "Act as a refactoring assistant. Safe, incremental changes with diffs."
+
+[codex.checklists]
+pr = [
+  "Build Debug & Release",
+  "Unit tests pass",
+  "No sanitizer findings",
+  "No new warnings",
+  "Docs updated",
+]
+
+[codex.commands]
+configure = "cmake -S . -B build -DCMAKE_BUILD_TYPE=${build.profile}"
+build     = "cmake --build build --parallel"
+test      = "ctest --test-dir build --output-on-failure"
+run       = "./build/bin/tictactoe --mode local"
