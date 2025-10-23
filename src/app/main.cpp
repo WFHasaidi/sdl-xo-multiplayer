@@ -25,20 +25,20 @@ RendererSize rendererSize(SDL_Renderer* renderer) {
   return size;
 }
 
-void drawGrid(SDL_Renderer* renderer, int width, int height) {
+void drawGrid(SDL_Renderer* renderer, const RendererSize& size) {
   const int cols = ttt::Board::size();
   const int rows = ttt::Board::size();
-  const int cellW = width / cols;
-  const int cellH = height / rows;
+  const int cellW = size.width / cols;
+  const int cellH = size.height / rows;
 
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
   for (int c = 1; c < cols; ++c) {
     const int x = c * cellW;
-    SDL_RenderDrawLine(renderer, x, 0, x, height);
+    SDL_RenderDrawLine(renderer, x, 0, x, size.height);
   }
   for (int r = 1; r < rows; ++r) {
     const int y = r * cellH;
-    SDL_RenderDrawLine(renderer, 0, y, width, y);
+    SDL_RenderDrawLine(renderer, 0, y, size.width, y);
   }
 }
 
@@ -78,15 +78,15 @@ void drawO(SDL_Renderer* renderer, const SDL_Point& origin, int cellW, int cellH
   }
 }
 
-void drawBoard(SDL_Renderer* renderer, const ttt::Board& board, int width, int height) {
+void drawBoard(SDL_Renderer* renderer, const ttt::Board& board, const RendererSize& size) {
   const int cols = ttt::Board::size();
   const int rows = ttt::Board::size();
-  const int cellW = width / cols;
-  const int cellH = height / rows;
+  const int cellW = size.width / cols;
+  const int cellH = size.height / rows;
 
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
   SDL_RenderClear(renderer);
-  drawGrid(renderer, width, height);
+  drawGrid(renderer, size);
 
   SDL_SetRenderDrawColor(renderer, 20, 20, 20, SDL_ALPHA_OPAQUE);
   for (int r = 0; r < rows; ++r) {
@@ -175,7 +175,7 @@ int main() {
     }
 
     const RendererSize size = rendererSize(renderer.get());
-    drawBoard(renderer.get(), game.board(), size.width, size.height);
+    drawBoard(renderer.get(), game.board(), size);
     SDL_RenderPresent(renderer.get());
     SDL_SetWindowTitle(window.get(), stateToTitle(game).c_str());
   }

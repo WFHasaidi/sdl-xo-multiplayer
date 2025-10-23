@@ -1,3 +1,4 @@
+#include <exception>
 #include <iostream>
 
 #include "core/Board.hpp"
@@ -26,7 +27,7 @@ int failures = 0;
 
 }  // namespace
 
-int main() {
+int run_tests() {
   using ttt::Board;
   using ttt::Player;
 
@@ -39,8 +40,22 @@ int main() {
   board.place(0, 0, Player::O);
   board.place(0, 1, Player::O);
   board.place(0, 2, Player::O);
-  EXPECT_TRUE(board.winner().has_value());
-  EXPECT_EQ(board.winner().value(), Player::O);
+  const auto winner = board.winner();
+  EXPECT_TRUE(winner.has_value());
+  if (winner.has_value()) {
+    EXPECT_EQ(*winner, Player::O);
+  }
   EXPECT_TRUE(!board.full());
   return failures == 0 ? 0 : 1;
+}
+
+int main() {
+  try {
+    return run_tests();
+  } catch (const std::exception& ex) {
+    std::cerr << "Unexpected exception: " << ex.what() << "\n";
+  } catch (...) {
+    std::cerr << "Unknown exception caught\n";
+  }
+  return 1;
 }

@@ -1,3 +1,4 @@
+#include <exception>
 #include <iostream>
 
 #include "core/Game.hpp"
@@ -26,7 +27,7 @@ int failures = 0;
 
 }  // namespace
 
-int main() {
+int run_tests() {
   using ttt::Game;
   using ttt::Player;
 
@@ -59,4 +60,15 @@ int main() {
   EXPECT_TRUE(game.playMove(2, 0));  // O
   EXPECT_TRUE(game.playMove(2, 2));  // X -> Draw
   return failures == 0 ? 0 : 1;
+}
+
+int main() {
+  try {
+    return run_tests();
+  } catch (const std::exception& ex) {
+    std::cerr << "Unexpected exception: " << ex.what() << "\n";
+  } catch (...) {
+    std::cerr << "Unknown exception caught\n";
+  }
+  return 1;
 }

@@ -28,6 +28,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(TTT_BUILD_TESTS "Build unit tests" ON)
+option(TTT_ENABLE_CLANG_TIDY "Enable clang-tidy static analysis targets" OFF)
+option(TTT_ENABLE_CPPCHECK "Enable cppcheck static analysis targets" OFF)
+
+if (TTT_ENABLE_CLANG_TIDY OR TTT_ENABLE_CPPCHECK)
+  set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif()
 
 find_package(SDL2 REQUIRED CONFIG)
 
@@ -56,6 +62,24 @@ endif()
 target_compile_definitions(tictactoe PRIVATE SDL_MAIN_HANDLED)
 ttt_enable_warnings(tictactoe)
 
+function(ttt_collect_sources out_var)
+  set(accumulated "")
+  foreach(target IN LISTS ARGN)
+    get_target_property(target_sources ${target} SOURCES)
+    if (NOT target_sources)
+      continue()
+    endif()
+    foreach(source_file IN LISTS target_sources)
+      if (NOT IS_ABSOLUTE ${source_file})
+        set(source_file "${CMAKE_CURRENT_SOURCE_DIR}/${source_file}")
+      endif()
+      list(APPEND accumulated "${source_file}")
+    endforeach()
+  endforeach()
+  list(REMOVE_DUPLICATES accumulated)
+  set(${out_var} "${accumulated}" PARENT_SCOPE)
+endfunction()
+
 if (TTT_BUILD_TESTS)
   enable_testing()
 
@@ -68,4 +92,51 @@ if (TTT_BUILD_TESTS)
   target_link_libraries(test_game PRIVATE ttt_core)
   ttt_enable_warnings(test_game)
   add_test(NAME test_game COMMAND test_game)
+endif()
+
+set(TTT_STATIC_ANALYSIS_TARGETS)
+set(TTT_TARGETS_FOR_ANALYSIS ttt_core tictactoe)
+if (TTT_BUILD_TESTS)
+  list(APPEND TTT_TARGETS_FOR_ANALYSIS test_board test_game)
+endif()
+
+if (TTT_ENABLE_CLANG_TIDY)
+  find_program(TTT_CLANG_TIDY_EXECUTABLE NAMES clang-tidy)
+  if (NOT TTT_CLANG_TIDY_EXECUTABLE)
+    message(FATAL_ERROR "TTT_ENABLE_CLANG_TIDY is ON but clang-tidy was not found")
+  endif()
+  ttt_collect_sources(TTT_CLANG_TIDY_SOURCES ${TTT_TARGETS_FOR_ANALYSIS})
+  add_custom_target(ttt_clang_tidy
+    COMMAND ${TTT_CLANG_TIDY_EXECUTABLE} --config-file=${CMAKE_SOURCE_DIR}/.clang-tidy -p
+            ${CMAKE_BINARY_DIR} ${TTT_CLANG_TIDY_SOURCES}
+    DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running clang-tidy on project sources"
+    VERBATIM)
+  list(APPEND TTT_STATIC_ANALYSIS_TARGETS ttt_clang_tidy)
+endif()
+
+if (TTT_ENABLE_CPPCHECK)
+  find_program(TTT_CPPCHECK_EXECUTABLE NAMES cppcheck)
+  if (NOT TTT_CPPCHECK_EXECUTABLE)
+    message(FATAL_ERROR "TTT_ENABLE_CPPCHECK is ON but cppcheck was not found")
+  endif()
+  add_custom_target(ttt_cppcheck
+    COMMAND ${TTT_CPPCHECK_EXECUTABLE}
+            --project=${CMAKE_BINARY_DIR}/compile_commands.json
+            --enable=warning,style,performance,portability
+            --std=c++20
+            --inline-suppr
+            --error-exitcode=1
+    DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running cppcheck on project sources"
+    VERBATIM)
+  list(APPEND TTT_STATIC_ANALYSIS_TARGETS ttt_cppcheck)
+endif()
+
+if (TTT_STATIC_ANALYSIS_TARGETS)
+  add_custom_target(static-analysis
+    COMMENT "Aggregate static analysis targets"
+    DEPENDS ${TTT_STATIC_ANALYSIS_TARGETS})
 endif()
