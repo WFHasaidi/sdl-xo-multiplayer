@@ -4,6 +4,3 @@ sdl/2.30.8
 [generators]
 CMakeDeps
 CMakeToolchain
-
-[options]
-sdl/*:wayland=False

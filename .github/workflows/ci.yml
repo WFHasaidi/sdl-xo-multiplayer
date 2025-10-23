@@ -48,7 +48,7 @@ jobs:
         run: conan profile detect --force
 
       - name: Install dependencies
-        run: conan install . -of build -s build_type=Debug --build=missing
+        run: conan install . -of build -s build_type=Debug -o sdl/*:wayland=False --build=missing
 
       - name: Configure CMake
         run: |
