@@ -53,6 +53,7 @@ target_link_libraries(tictactoe PRIVATE ttt_core SDL2::SDL2)
 if (TARGET SDL2::SDL2main)
   target_link_libraries(tictactoe PRIVATE SDL2::SDL2main)
 endif()
+target_compile_definitions(tictactoe PRIVATE SDL_MAIN_HANDLED)
 ttt_enable_warnings(tictactoe)
 
 if (TTT_BUILD_TESTS)
